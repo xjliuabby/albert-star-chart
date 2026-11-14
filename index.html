@@ -70,7 +70,7 @@ onAuthStateChanged(auth,async u=>{
   let initialized=false;
   await runTransaction(db,async tx=>{const snap=await tx.get(cloudRef);if(!snap.exists()){tx.set(cloudRef,{stars:validStars(firstLocalStars)?firstLocalStars:{},redemptions:validRedeems(firstLocalRedemptions)?firstLocalRedemptions:[],updatedAt:new Date().toISOString()});initialized=true}});
   if(initialized&&hasLocal)hint("已把这台设备的旧记录迁移到云端。其他设备请登录相同账号。");
-  else hint("云端数据已存在，将以云端为准；本设备旧记录不会自动覆盖云端。建议先导出备份。");
+  else {if(hasLocal){try{const k="albert-precloud-backup-"+u.uid;if(!localStorage.getItem(k))localStorage.setItem(k,JSON.stringify({stars:firstLocalStars,redemptions:firstLocalRedemptions}))}catch(e){}}hint("云端数据已存在，将以云端为准；本设备原有记录已另存本地备份，不会覆盖云端。");}
   unsub=onSnapshot(cloudRef,snap=>{if(!snap.exists())return;const v=snap.data();if(!validStars(v.stars)||!validRedeems(v.redemptions||[])){status("云端数据格式错误");return}stars=v.stars;redemptions=v.redemptions||[];ready=true;persist();status(snap.metadata.fromCache?"离线缓存（请联网）":"已同步 ☁️");render()},error);
  }catch(e){error(e)}
 });
